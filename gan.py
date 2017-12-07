@@ -104,7 +104,23 @@ class WGANMetric(object):
         '''
         return self.value_ / self.update_
 
-
+def load_data_mnist(batch_size, resize=None):
+    """download the fashion mnist dataest and then load into memory"""
+    def transform_mnist(data, label):
+        if resize:
+            # resize to resize x resize
+            data = image.imresize(data, resize, resize)
+        # change data from height x weight x channel to channel x height x weight
+        return nd.transpose(data.astype('float32'), (2,0,1))/255, label.astype('float32')
+    mnist_train = mx.gluon.data.vision.MNIST(root='./data',
+        train=True, transform=transform_mnist)
+    mnist_test = mx.gluon.data.vision.MNIST(root='./data',
+        train=False, transform=transform_mnist)
+    train_data = mx.gluon.data.DataLoader(
+        mnist_train, batch_size, shuffle=True)
+    test_data = mx.gluon.data.DataLoader(
+        mnist_test, batch_size, shuffle=False)
+    return (train_data, test_data)
 
 def get_mnist(image_size):
     mnist = fetch_mldata('MNIST original')
@@ -180,7 +196,9 @@ if __name__ == '__main__':
     symG, symD = make_sym(ngf, ndf, nc, is_wgan, image_size, is_mlp)
 
     # ==============data==============
-    X_train, X_test, Y_train, Y_test = get_mnist(image_size)
+    #X_train, X_test, Y_train, Y_test = get_mnist(image_size)
+    train_data,test_data = load_data_mnist(60000,28)
+    
     train_iter = mx.io.NDArrayIter(X_train, label=Y_train, batch_size=batch_size)
     rand_iter = RandIter(batch_size, Z)
 
